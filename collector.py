@@ -2,103 +2,40 @@ import json
 import platform
 import socket
 import subprocess
-import time
-import threading
-import concurrent.futures
-
+import psutil
 
 def get_hostname():
     return socket.gethostname()
 
-
 def get_os_info():
     return platform.platform()
 
-def _is_port_open(host: str, port: int, timeout: float) -> bool:
-    """Return True if the TCP port is open on the given host."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(timeout)
-        return sock.connect_ex((host, port)) == 0
-
-def get_open_ports(host: str = "127.0.0.1", ports=None, timeout: float = 0.1, max_workers: int = 100):
-    print("Collecting open ports...")
-    if ports is None:
-        ports = range(1, 65536)
-
-    total_ports = len(ports)
-    scanned = [0]  # mutable counter for cross-thread updates
-    scanned_lock = threading.Lock()
-    done = threading.Event()
-    open_ports = []
-
-    def _print_progress():
-        while not done.wait(10):
-            with scanned_lock:
-                count = scanned[0]
-            print(f"Scanned {count}/{total_ports} ports...")
-
-    progress_thread = threading.Thread(target=_print_progress, daemon=True)
-    progress_thread.start()
-
-    start = time.perf_counter()
-
-    # Avoid creating more threads than there are ports.
-    max_workers = min(max_workers, total_ports)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(_is_port_open, host, port, timeout): port for port in ports}
-        for future in concurrent.futures.as_completed(futures):
-            port = futures[future]
+def get_listening_ports_details():
+    print("Interrogating listening ports...")
+    listening_ports = []
+    for conn in psutil.net_connections(kind='tcp'):
+        if conn.status == 'LISTEN':
             try:
-                is_open = future.result()
-            except Exception:
-                is_open = False
-            finally:
-                with scanned_lock:
-                    scanned[0] += 1
-
-            if is_open:
-                open_ports.append(port)
-
-    done.set()
-    progress_thread.join(timeout=0.1)
-
-    end = time.perf_counter()
-    print(f"Scanned {scanned[0]}/{total_ports} ports in {end - start:.1f}s")
-    open_ports.sort()
-    return open_ports
-
-def get_open_ports_details(ports, host: str = "127.0.0.1"):
-    print("Interrogating port details...")
-    port_details = {}
-    for port in ports:
-        print(f"Checking details for port {port}...")
-        try:
-            # Create a new socket and set a timeout to avoid hanging indefinitely
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1) 
-            
-            # Attempt to connect
-            result = s.connect_ex((host, port))
-            
-            if result == 0:
-                try:
-                    # Get the service name associated with the port
-                    service_name = socket.getservbyport(port, 'tcp')
-                    print(f"Port {port} is OPEN. Service: {service_name}")
-                except OSError:
-                    print(f"Port {port} is OPEN. Service: Unknown")
-            else:
-                print(f"Port {port} is CLOSED or FILTERED (Error code: {result})")
-
-        except socket.error as e:
-            return f"Error: {e}"
-        finally:
-            s.close() # Ensure the socket is closed
-
-
-
-
+                if any(port['port'] == conn.laddr.port for port in listening_ports):
+                    continue  # Skip if port already recorded
+                process = psutil.Process(conn.pid)
+                listening_ports.append({
+                    'port': conn.laddr.port,
+                    'address': conn.laddr.ip,
+                    'pid': conn.pid,
+                    'process_name': process.name()
+                })
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                if any(port['port'] == conn.laddr.port for port in listening_ports):
+                    continue  # Skip if port already recorded
+                listening_ports.append({
+                    'port': conn.laddr.port,
+                    'address': conn.laddr.ip,
+                    'pid': conn.pid,
+                    'process_name': 'Unknown/Restricted'
+                })
+    listening_ports.sort(key=lambda x: x['port'])
+    return listening_ports
 
 def get_installed_software_windows():
     # TODO: Will this run on legacy Windows machines? Need to test on Windows 7/8/8.1.
@@ -107,7 +44,6 @@ def get_installed_software_windows():
                 "powershell", "-Command", 
                 'Get-ItemProperty -Path HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*, HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*', 
                 '| Where-Object { $_.DisplayName -ne $null } | Select-Object DisplayName, DisplayVersion, Publisher, InstallDate | ConvertTo-Json'
-                # '> "installed.txt"'
             ],
             capture_output=True,
             text=True,
@@ -160,8 +96,7 @@ def build_inventory_as_json(hostname, os_info, open_ports, installed_software):
         "open_ports": open_ports,
         "installed_software": installed_software
     }
-    return json.dumps(inventory, indent=4)
-    
+    return json.dumps(inventory, indent=4)    
 
 def save_inventory_to_json(inventory, filename):
     with open(filename, "w") as f:
@@ -174,16 +109,11 @@ def main():
     print(f"Hostname: {hostname}")
     print(f"Operating System: {os_info}")
 
-    # TODO: Uncomment before final release. For testing, we want to avoid the long runtime of scanning all ports.
-    open_ports = get_open_ports()
-    get_open_ports_details(open_ports)
+    open_ports = get_listening_ports_details()
 
     installed_software = get_installed_software(os_info)
     inventory = build_inventory_as_json(hostname, os_info, open_ports, installed_software)
     save_inventory_to_json(inventory, "inventory.json")
-
-
-
 
 
 if __name__ == "__main__":
