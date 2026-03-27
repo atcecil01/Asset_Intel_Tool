@@ -1,6 +1,7 @@
 import json
 import os
 from asset import Asset
+from tabulate import tabulate
 
 class AssetManager:
     def __init__(self):
@@ -31,12 +32,9 @@ class AssetManager:
             installed_software = asset_data.get("installed_software")
         self.assets.append(Asset(hostname, os_info, open_ports, installed_software))
     
-    # def get_inventory(self, hostname):
-    #     for asset in self.assets:
-    #         if asset.hostname == hostname:
-    #             return asset
-    #     return None
+    def list_assets(self):
+            table = []
+            for asset in self.assets:
+                table.append([asset.hostname, asset.os_info, len(asset.open_ports), len(asset.installed_software)])
+            return tabulate(table, headers=["Hostname", "OS", "Open Ports", "Software Count"])
 
-    # def save_all_inventories(self):
-    #     for hostname, inventory in self.assets.items():
-    #         save_inventory_to_json(inventory, f"inventory_{hostname}.json")
