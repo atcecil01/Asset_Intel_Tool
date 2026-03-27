@@ -26,7 +26,12 @@ def filter_by_os(args) -> None:
 
 
 def list_risky_hosts(args) -> None:
-    print("Listing hosts with risky software.")
+    mgr = asset_mgr()
+    mgr.add_assets(args.file_path)
+    risky_assets = mgr.risky_hosts(advanced=args.advanced)
+    
+    print(tabulate([[asset.hostname, asset.risk_score, ", ".join(asset.risk_notes)] for asset in risky_assets], headers=["Hostname", "Risk Score", "Risk Notes"]))
+    print()
 
 
 
@@ -51,6 +56,7 @@ def main():
 
     p_risky_hosts = subparsers.add_parser('risky-hosts', help='List hosts with risky software')
     p_risky_hosts.add_argument('--file_path', '-f', default=os.getcwd(), help='Path to the JSON file or directory containing asset data')
+    p_risky_hosts.add_argument('--advanced', '-a', action='store_true', help='Use advanced risk assessment criteria')
     p_risky_hosts.set_defaults(func=list_risky_hosts)
 
     args = parser.parse_args()

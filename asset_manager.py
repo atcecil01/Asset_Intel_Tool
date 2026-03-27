@@ -37,4 +37,43 @@ class AssetManager:
             for asset in self.assets:
                 table.append([asset.hostname, asset.os_info, len(asset.open_ports), len(asset.installed_software)])
             return tabulate(table, headers=["Hostname", "OS", "Open Ports", "Software Count"])
+    
+    def risky_hosts(self, advanced=False):
+        if advanced:
+            return self.advanced_risk_assessment()
+        else:
+            return self.basic_risk_assessment()
 
+    def basic_risk_assessment(self):
+        risk_score = 0
+        
+        for asset in self.assets:
+            if len(asset.open_ports) > 10:
+                risk_score += 2
+                asset.risk_notes.append("High number of open ports")
+            port_risks = {3389: 3, 22: 3, 445: 2}
+            for p in asset.open_ports:
+                if p.port in port_risks:
+                    risk_score += port_risks[p.port]
+                    asset.risk_notes.append(f"Port {p.port} open")
+            if len(asset.installed_software) > 5:
+                risk_score += 1
+                asset.risk_notes.append("High number of installed software")
+            if len(asset.open_ports) == 0 or len(asset.installed_software) == 0:
+                risk_score += 2
+                asset.risk_notes.append("No open ports or installed software")
+
+            if risk_score <= 2:
+                asset.risk_score = "Low"
+            elif risk_score <= 5:
+                asset.risk_score = "Medium"
+            elif risk_score <= 8:
+                asset.risk_score = "High"
+            else:
+                asset.risk_score = "Critical"
+
+        return self.assets
+    
+    def advanced_risk_assessment(self):
+        # TODO: Implement more advanced risk assessment logic based on specific software vulnerabilities, port risks, and other factors
+        pass
