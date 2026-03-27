@@ -4,7 +4,6 @@ from tabulate import tabulate
 from asset_manager import AssetManager
 
 def asset_mgr() -> AssetManager:
-    print("Initializing Inventory Manager.")
     return AssetManager()
 
 
@@ -12,13 +11,18 @@ def list_assets(args) -> None:
     mgr = asset_mgr()
     mgr.add_assets(args.file_path)
     mgr.list_assets()
+    
     print(tabulate([[asset.hostname, asset.os_info, len(asset.open_ports), len(asset.installed_software)] for asset in mgr.assets], headers=["Hostname", "OS Info", "Open Ports", "Software Count"]))
-
-
+    print()
 
 
 def filter_by_os(args) -> None:
-    print(f"Filtering assets by operating system: {args.os}")
+    mgr = asset_mgr()
+    mgr.add_assets(args.file_path)
+    filtered_assets = [asset for asset in mgr.assets if args.os.lower() in asset.os_info.lower()]
+    
+    print(tabulate([[asset.hostname, asset.os_info, len(asset.open_ports), len(asset.installed_software)] for asset in filtered_assets], headers=["Hostname", "OS Info", "Open Ports", "Software Count"]))
+    print()
 
 
 def list_risky_hosts(args) -> None:
@@ -29,6 +33,12 @@ def list_risky_hosts(args) -> None:
 def main():
     parser = argparse.ArgumentParser(description='Asset Intelligence CLI Tool')
     subparsers = parser.add_subparsers(dest='command', required=True)
+
+    print() # Initial newline for better console formatting
+    print("--------------------------------------")
+    print("-------Asset Intelligence Tool--------")
+    print("--------------------------------------")
+    print()
 
     p_list = subparsers.add_parser('list', help='List all asset items')
     p_list.add_argument('--file_path', '-f', default=os.getcwd(), help='Path to the JSON file or directory containing asset data')
