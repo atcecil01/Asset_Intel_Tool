@@ -1,5 +1,6 @@
-*.json
 # Ignore Python bytecode files
 *.pyc
 # Ignore __pycache__ directories at any level
 __pycache__/
+# Ignore contents of asset_data folder
+asset_data/*

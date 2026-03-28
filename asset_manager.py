@@ -45,16 +45,18 @@ class AssetManager:
             return self.basic_risk_assessment()
 
     def basic_risk_assessment(self):
-        risk_score = 0
+        with open("config.json", "r") as f:
+            config = json.load(f)
+        high_risk_ports = {int(k): v for k, v in config["high_risk_ports"].items()}
         
         for asset in self.assets:
+            risk_score = 0
             if len(asset.open_ports) > 10:
                 risk_score += 2
                 asset.risk_notes.append("High number of open ports")
-            port_risks = {3389: 3, 22: 3, 445: 2}
             for p in asset.open_ports:
-                if p.port in port_risks:
-                    risk_score += port_risks[p.port]
+                if p.port in high_risk_ports:
+                    risk_score += high_risk_ports[p.port]
                     asset.risk_notes.append(f"Port {p.port} open")
             if len(asset.installed_software) > 5:
                 risk_score += 1

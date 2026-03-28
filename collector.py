@@ -1,4 +1,5 @@
 import json
+import os
 import platform
 import socket
 import subprocess
@@ -99,7 +100,7 @@ def build_inventory_as_json(hostname, os_info, open_ports, installed_software):
     return json.dumps(inventory, indent=4)    
 
 def save_inventory_to_json(inventory, filename):
-    with open(filename, "w") as f:
+    with open(os.path.join("asset_data", filename), "w") as f:
         f.write(inventory)
 
 def main():
