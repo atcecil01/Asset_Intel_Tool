@@ -3,5 +3,14 @@
     "3389": 3,
     "22": 3,
     "445": 2
+  },
+  "thresholds": {
+    "open_ports": 10,
+    "installed_software": 5
+  },
+  "risk_score_levels": {
+    "low": 2,
+    "medium": 5,
+    "high": 8
   }
 }

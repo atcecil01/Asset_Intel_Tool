@@ -48,28 +48,30 @@ class AssetManager:
         with open("config.json", "r") as f:
             config = json.load(f)
         high_risk_ports = {int(k): v for k, v in config["high_risk_ports"].items()}
+        thresholds = config["thresholds"]
+        risk_levels = config["risk_score_levels"]
         
         for asset in self.assets:
             risk_score = 0
-            if len(asset.open_ports) > 10:
+            if len(asset.open_ports) > thresholds["open_ports"]:
                 risk_score += 2
                 asset.risk_notes.append("High number of open ports")
             for p in asset.open_ports:
                 if p.port in high_risk_ports:
                     risk_score += high_risk_ports[p.port]
                     asset.risk_notes.append(f"Port {p.port} open")
-            if len(asset.installed_software) > 5:
+            if len(asset.installed_software) > thresholds["installed_software"]:
                 risk_score += 1
                 asset.risk_notes.append("High number of installed software")
             if len(asset.open_ports) == 0 or len(asset.installed_software) == 0:
                 risk_score += 2
                 asset.risk_notes.append("No open ports or installed software")
 
-            if risk_score <= 2:
+            if risk_score <= risk_levels["low"]:
                 asset.risk_score = "Low"
-            elif risk_score <= 5:
+            elif risk_score <= risk_levels["medium"]:
                 asset.risk_score = "Medium"
-            elif risk_score <= 8:
+            elif risk_score <= risk_levels["high"]:
                 asset.risk_score = "High"
             else:
                 asset.risk_score = "Critical"
