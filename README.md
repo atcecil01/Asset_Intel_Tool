@@ -11,19 +11,7 @@ A command-line tool for managing and analyzing asset data from JSON files. This 
 
 ## Configuration
 
-The tool uses a `config.json` file to define high-risk ports and their associated risk scores. The default configuration includes:
-
-```json
-{
-  "high_risk_ports": {
-    "3389": 3,
-    "22": 3,
-    "445": 2
-  }
-}
-```
-
-You can modify this file to add or remove ports and adjust risk scores as needed.
+The tool uses a `config.json` file to define high-risk ports and their associated risk scores, risk thresholds, and risk score intervals. These values can be modified locally as needed.
 
 ## Installation
 
@@ -107,6 +95,17 @@ The tool expects JSON files with the following structure:
   ]
 }
 ```
+
+## Risk Scoring Logic
+
+Basic risk scoring logic looks at the number of open ports, number of installed software, and any known high-risk ports. Each asset will accumulate a risk score based on these factors. The thresholds for each risk factor, and the list of high-risk ports, are customizable in the `config.json` file.
+
+Advanced risk assessment logic (not implemented) will also consider additional risk factors such as last updated dates, and whether any known vulnerabilities exist for an installed software/open port.
+
+## Limitations
+
+- The tool is currently only tested on Windows 10/11. Future versions will contain support for legacy versions of Windows, and Linux systems.
+- Advanced risk assessment is under development, and unavailable at this time.  
 
 ## Requirements
 
