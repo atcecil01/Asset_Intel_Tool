@@ -4,3 +4,5 @@
 __pycache__/
 # Ignore contents of asset_data folder
 asset_data/*
+# Ignore XML files
+*.xml
