@@ -115,7 +115,7 @@ def main():
     installed_software = get_installed_software(os_info)
     inventory = build_inventory_as_json(hostname, os_info, open_ports, installed_software)
     save_inventory_to_json(inventory, f"inventory_{hostname}.json")
-    print("Asset Collection Complete: Inventory saved to inventory.json")
+    print(f"Asset Collection Complete: Inventory saved to inventory_{hostname}.json")
 
 
 if __name__ == "__main__":

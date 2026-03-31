@@ -32,7 +32,7 @@ The tool uses a `config.json` file to define high-risk ports and their associate
 
 3. Install dependencies:
    ```
-   pip install -r requirements.txt
+   python3 -m pip install -r requirements.txt
    ```
 
 ## Usage
