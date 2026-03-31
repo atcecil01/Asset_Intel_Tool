@@ -30,8 +30,10 @@ class AssetManager:
             os_info = asset_data.get("os_info")
             open_ports = asset_data.get("open_ports")
             installed_software = asset_data.get("installed_software")
-        self.assets.append(Asset(hostname, os_info, open_ports, installed_software))
-    
+            nmap_ports = asset_data.get("nmap_ports")
+
+        self.assets.append(Asset(hostname, os_info, open_ports, installed_software, nmap_ports))
+
     def list_assets(self):
             table = []
             for asset in self.assets:
@@ -79,5 +81,15 @@ class AssetManager:
         return self.assets
     
     def advanced_risk_assessment(self):
-        # TODO: Implement more advanced risk assessment logic based on specific software vulnerabilities, port risks, and other factors
-        pass
+        for asset in self.assets:
+            risk_score = 0
+            vuln_id = None
+            for p in asset.nmap_ports:
+                for v in p.vulnerabilities:
+                    if v.cvss_score > risk_score:
+                        risk_score = v.cvss_score
+                        vuln_id = v.id
+            if vuln_id:
+                asset.risk_notes.append(f"Vulnerability {vuln_id} with CVSS score {risk_score} on port {p.portid}")
+            asset.risk_score = risk_score
+        return self.assets

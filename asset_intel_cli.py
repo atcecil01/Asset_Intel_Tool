@@ -30,7 +30,12 @@ def list_risky_hosts(args) -> None:
     mgr.add_assets(args.file_path)
     risky_assets = mgr.risky_hosts(advanced=args.advanced)
     
-    print(tabulate([[asset.hostname, asset.risk_score, ", ".join(asset.risk_notes)] for asset in risky_assets], headers=["Hostname", "Risk Score", "Risk Notes"]))
+    if args.advanced:
+        print("Advanced Risk Assessment:")
+        print(tabulate([[asset.hostname, asset.risk_score, ", ".join(asset.risk_notes)] for asset in (risky_assets if isinstance(risky_assets, list) else [])], headers=["Hostname", "Risk Score", "Risk Notes"]))
+    else:
+        print("Basic Risk Assessment:")
+        print(tabulate([[asset.hostname, asset.risk_score, ", ".join(asset.risk_notes)] for asset in (risky_assets if isinstance(risky_assets, list) else [])], headers=["Hostname", "Risk Score", "Risk Notes"]))
     print()
 
 
@@ -56,7 +61,7 @@ def main():
 
     p_risky_hosts = subparsers.add_parser('risky-hosts', help='List hosts with risky software')
     p_risky_hosts.add_argument('--file_path', '-f', default=os.path.join(os.getcwd(), "asset_data"), help='Path to the JSON file or directory containing asset data')
-    p_risky_hosts.add_argument('--advanced', '-a', action='store_true', help='Use advanced risk assessment criteria')
+    p_risky_hosts.add_argument('--advanced', '-a', action='store_true', help='Use advanced risk assessment criteria', default=False)
     p_risky_hosts.set_defaults(func=list_risky_hosts)
 
     args = parser.parse_args()
